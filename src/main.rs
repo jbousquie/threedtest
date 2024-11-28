@@ -91,6 +91,9 @@ pub fn main() {
         y = y + delta;
         let sphere_y = 1.5 * y.sin();
         sphere.set_transformation(Mat4::from_translation(vec3(0.0, sphere_y, 0.0)) * Mat4::from_scale(0.2));
+        cube.set_transformation(
+            Mat4::from_translation(vec3(0.0, 0.0, 3.0 * (2.0* y).cos())) * 
+            Mat4::from_axis_angle(vec3(1.0, 1.0, 0.0).normalize(), degrees(y * 60.0)) * Mat4::from_scale(0.2));
 
         frame_input
             .screen()
