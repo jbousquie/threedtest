@@ -60,15 +60,17 @@ pub fn main() {
 
     let mut cube = Gm::new(
         Mesh::new(&context, &CpuMesh::cube()), 
-        PhysicalMaterial::new_transparent(
+        PhysicalMaterial::new_opaque(
             &context,
             &CpuMaterial {
                 albedo: Srgba {
-                    r: 0,
-                    g: 0,
-                    b: 255,
-                    a: 200,
+                    r: 100,
+                    g: 100,
+                    b: 250,
+                    a: 255,
                 },
+                metallic: 1.0,
+                roughness: 1.0,
                 ..Default::default()
             }
         ),
@@ -79,7 +81,7 @@ pub fn main() {
     let axes = Axes::new(&context, 0.03, 1.0);
 
     let light0: DirectionalLight = DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(0.0, -0.5, -0.5));
-    let light1: DirectionalLight = DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(0.0, 0.5, 0.5));
+    let light1: DirectionalLight = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(0.0, 0.5, 0.5));
 
     let  delta: f32 = 0.01;
     let mut y = 0.0;
