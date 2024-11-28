@@ -41,7 +41,7 @@ pub fn main() {
     );
     sphere.set_transformation(Mat4::from_translation(vec3(0.0, 1.3, 0.0)) * Mat4::from_scale(0.2));
 
-    let cylinder = Gm::new(
+    let mut cylinder = Gm::new(
         Mesh::new(&context, &CpuMesh::cylinder(16)),
           PhysicalMaterial::new_transparent(
             &context,
@@ -56,22 +56,52 @@ pub fn main() {
             },
         ),
     );
+    cylinder.set_transformation(Mat4::from_translation(vec3(1.3, 0.0, 0.0)) * Mat4::from_scale(0.2));
 
+    let mut cube = Gm::new(
+        Mesh::new(&context, &CpuMesh::cube()), 
+        PhysicalMaterial::new_transparent(
+            &context,
+            &CpuMaterial {
+                albedo: Srgba {
+                    r: 0,
+                    g: 0,
+                    b: 255,
+                    a: 200,
+                },
+                ..Default::default()
+            }
+        ),
+    );
+            
+    cube.set_transformation(Mat4::from_translation(vec3(0.0, 0.0, 1.3)) * Mat4::from_scale(0.2));
+
+    let axes = Axes::new(&context, 0.03, 1.0);
 
     let light0: DirectionalLight = DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(0.0, -0.5, -0.5));
     let light1: DirectionalLight = DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(0.0, 0.5, 0.5));
 
+    let  delta: f32 = 0.01;
+    let mut y = 0.0;
 
     window.render_loop(move | mut frame_input | {
         camera.set_viewport(frame_input.viewport);
         control.handle_events(&mut camera, &mut frame_input.events);
+
+        y = y + delta;
+        let sphere_y = 1.5 * y.sin();
+        sphere.set_transformation(Mat4::from_translation(vec3(0.0, sphere_y, 0.0)) * Mat4::from_scale(0.2));
 
         frame_input
             .screen()
             .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
             .render(
                 &camera,
-                &sphere,
+                sphere
+                    .into_iter()
+                    .chain(&cylinder)
+                    .chain(&cube)
+                    .chain(&axes),
                 &[&light0, &light1],
             );
 
