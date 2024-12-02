@@ -1,8 +1,11 @@
-// https://github.com/asny/three-d/blob/master/examples/shapes/src/main.rs
+// https://github.com/asny/three-d/blob/master/examples/instanced_shapes/src/main.rs
 
 use three_d::*;
 
 pub fn main() {
+
+    let side_count = 10;
+
     let window = Window::new(WindowSettings {
         title: "Test ThreeD".to_string(),
         max_size: Some((1280, 720)),
@@ -14,7 +17,7 @@ pub fn main() {
 
     let mut camera = Camera::new_perspective(
         window.viewport(),
-        vec3(5.0, 2.0, 2.5),
+        vec3(60.0, 50.0, 60.0),
          vec3(0.0, 0.0, -0.5),
          vec3(0.0, 1.0, 0.0),
          degrees(45.0),
@@ -22,91 +25,54 @@ pub fn main() {
          1000.0,
     );
 
-    let mut control = OrbitControl::new(*camera.target(), 1.0, 100.0);
+    let mut control = OrbitControl::new(camera.target(), 1.0, 1000.0);
 
-    let mut sphere = Gm::new(
-        Mesh::new(&context, &CpuMesh::sphere(16)),
-        PhysicalMaterial::new_transparent(
-            &context, 
+    let light0: DirectionalLight = DirectionalLight::new(&context, 1.0, Srgba::WHITE, vec3(0.0, -0.5, -0.5));
+    let light1: DirectionalLight = DirectionalLight::new(&context, 2.0, Srgba::WHITE, vec3(0.0, 0.5, 0.5));
+
+    let mut instanced_mesh = Gm::new(
+        InstancedMesh::new(&context, &Instances::default(), &CpuMesh::cube()),
+        PhysicalMaterial::new(
+            &context,
             &CpuMaterial {
-                albedo: Srgba {
-                    r: 255,
-                    g: 0,
-                    b: 0,
-                    a: 200,
-                },
+                albedo: Srgba { r: 128, g: 128, b: 128, a: 255 },
                 ..Default::default()
             },
         ),
     );
-    sphere.set_transformation(Mat4::from_translation(vec3(0.0, 1.3, 0.0)) * Mat4::from_scale(0.2));
 
-    let mut cylinder = Gm::new(
-        Mesh::new(&context, &CpuMesh::cylinder(16)),
-          PhysicalMaterial::new_transparent(
-            &context,
-            &CpuMaterial {
-                albedo: Srgba {
-                    r: 0,
-                    g: 255,
-                    b: 0,
-                    a: 200,
-                },
-                ..Default::default()
-            },
-        ),
-    );
-    cylinder.set_transformation(Mat4::from_translation(vec3(1.3, 0.0, 0.0)) * Mat4::from_scale(0.2));
 
-    let mut cube = Gm::new(
-        Mesh::new(&context, &CpuMesh::cube()), 
-        PhysicalMaterial::new_opaque(
-            &context,
-            &CpuMaterial {
-                albedo: Srgba {
-                    r: 100,
-                    g: 100,
-                    b: 250,
-                    a: 255,
-                },
-                metallic: 1.0,
-                roughness: 1.0,
-                ..Default::default()
-            }
-        ),
-    );
+
+
+
+    let count = side_count * side_count * side_count;
+    instanced_mesh.set_instances(&Instances {
+        transformations: (0..count)
+            .map(|i| {
+                let x = i % side_count;
+                let y = (i / side_count) % side_count;
+                let z = i / (side_count * side_count);
             
-    cube.set_transformation(Mat4::from_translation(vec3(0.0, 0.0, 1.3)) * Mat4::from_scale(0.2));
-
-    let axes = Axes::new(&context, 0.03, 1.0);
-
-    let light0: DirectionalLight = DirectionalLight::new(&context, 1.0, Srgba::WHITE, &vec3(0.0, -0.5, -0.5));
-    let light1: DirectionalLight = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(0.0, 0.5, 0.5));
-
-    let  delta: f32 = 0.01;
-    let mut y = 0.0;
+                Mat4::from_translation(vec3(3.0 * x as f32 - 1.5 * side_count as f32, 3.0 * y as f32 - 1.5 * side_count as f32, 3.0 * z as f32 - 1.5 * side_count as f32))
+            })
+            .collect(),
+        ..Instances::default()
+    });
+        
 
     window.render_loop(move | mut frame_input | {
         camera.set_viewport(frame_input.viewport);
         control.handle_events(&mut camera, &mut frame_input.events);
 
-        y = y + delta;
-        let sphere_y = 1.5 * y.sin();
-        sphere.set_transformation(Mat4::from_translation(vec3(0.0, sphere_y, 0.0)) * Mat4::from_scale(0.2));
-        cube.set_transformation(
-            Mat4::from_translation(vec3(0.0, 0.0, 3.0 * (2.0* y).cos())) * 
-            Mat4::from_axis_angle(vec3(1.0, 1.0, 0.0).normalize(), degrees(y * 60.0)) * Mat4::from_scale(0.2));
+
+
 
         frame_input
             .screen()
             .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
             .render(
                 &camera,
-                sphere
-                    .into_iter()
-                    .chain(&cylinder)
-                    .chain(&cube)
-                    .chain(&axes),
+                &instanced_mesh,
                 &[&light0, &light1],
             );
 
