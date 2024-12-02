@@ -42,9 +42,6 @@ pub fn main() {
     );
 
 
-
-
-
     let count = side_count * side_count * side_count;
     instanced_mesh.set_instances(&Instances {
         transformations: (0..count)
@@ -56,6 +53,19 @@ pub fn main() {
                 Mat4::from_translation(vec3(3.0 * x as f32 - 1.5 * side_count as f32, 3.0 * y as f32 - 1.5 * side_count as f32, 3.0 * z as f32 - 1.5 * side_count as f32))
             })
             .collect(),
+        colors: Some(
+            (0..count)
+            .map(|i| {
+                let x = i % side_count;
+                let y = (i / side_count) % side_count;
+                let z = i / (side_count * side_count);
+                let r = (x as f32 / side_count as f32 * 255.0) as u8 + 26;
+                let g = (y as f32 / side_count as f32 * 255.0) as u8 + 26;
+                let b = (z as f32 / side_count as f32 * 255.0) as u8 + 26;
+                Srgba::new(r, g, b, 255)
+            })
+            .collect(),
+        ),
         ..Instances::default()
     });
         
