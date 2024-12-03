@@ -6,7 +6,7 @@ use three_d::*;
 
 pub fn main() {
 
-    let side_count = 10;
+    let side_count = 20;
 
     let window = Window::new(WindowSettings {
         title: "Test ThreeD".to_string(),
@@ -45,7 +45,7 @@ pub fn main() {
 
 
     let count = side_count * side_count * side_count;
-    let instances = compute_instances(count, side_count, 0.0);
+    let instances = compute_instances(count, side_count, true, 0.0);
     instanced_mesh.set_instances(&instances);
         
 
@@ -55,7 +55,7 @@ pub fn main() {
 
 
         let time = (frame_input.accumulated_time * 0.001) as f32;
-        let instances = compute_instances(count, side_count, time);
+        let instances = compute_instances(count, side_count, true, time);
         instanced_mesh.set_instances(&instances);
 
 
@@ -73,36 +73,66 @@ pub fn main() {
 
 }
 
-fn compute_instances(count: i32, side_count: i32, time: f32) -> Instances {
-    Instances {
-        transformations: (0..count)
-            .map(|i| {
-                let x = i % side_count;
-                let y = (i / side_count) % side_count;
-                let z = i / (side_count * side_count);
-            
-                let translation = Mat4::from_translation(vec3(3.0 * x as f32 - 1.5 * side_count as f32, 3.0 * y as f32 - 1.5 * side_count as f32, 3.0 * z as f32 - 1.5 * side_count as f32));
-                let rotation = 
-                    Mat4::from_angle_x(radians(time * x as f32 * 0.3)) *
-                    Mat4::from_angle_y(radians(time * y as f32 * 0.2)) *
-                    Mat4::from_angle_z(radians(time * z as f32 * 0.1));
-            
-                translation * rotation
-                })
-            .collect(),
-        colors: Some(
-            (0..count)
-            .map(|i| {
-                let x = i % side_count;
-                let y = (i / side_count) % side_count;
-                let z = i / (side_count * side_count);
-                let r = (x as f32 / side_count as f32 * 255.0) as u8 ;
-                let g = (y as f32 / side_count as f32 * 255.0) as u8;
-                let b = (z as f32 / side_count as f32 * 255.0) as u8;
-                Srgba::new(r, g, b, 255)
-            })
-            .collect(),
-        ),
-        ..Instances::default()
-    } 
+fn compute_instances(count: i32, side_count: i32, has_color: bool, time: f32) -> Instances {
+    let mut transformations: Vec<Mat4> = Vec::new();
+    let mut colors: Vec<Srgba> = Vec::new();
+    
+    for i in 0..count {
+        let x = i % side_count;
+        let y = (i / side_count) % side_count;
+        let z = i / (side_count * side_count);
+        let translation = Mat4::from_translation(vec3(3.0 * x as f32 - 1.5 * side_count as f32, 3.0 * y as f32 - 1.5 * side_count as f32, 3.0 * z as f32 - 1.5 * side_count as f32));
+        let rotation = 
+            Mat4::from_angle_x(radians(time * x as f32 * 0.3)) *
+            Mat4::from_angle_y(radians(time * y as f32 * 0.2)) *
+            Mat4::from_angle_z(radians(time * z as f32 * 0.1));
+        let transformation = translation * rotation;
+        transformations.push(transformation);
+        if has_color {
+            let r = (x as f32 / side_count as f32 * 255.0) as u8 ;
+            let g = (y as f32 / side_count as f32 * 255.0) as u8;
+            let b = (z as f32 / side_count as f32 * 255.0) as u8;
+            colors.push(Srgba::new(r, g, b, 255));
+        }
+    }
+    if has_color {
+        Instances {
+            transformations,
+            colors: Some(colors),
+            ..Instances::default()
+        }
+    } else {
+        Instances {
+            transformations,
+            ..Instances::default()
+        }
+    }
 }  
+
+fn rotationYawPitchRoll(yaw: f32, pitch: f32, roll: f32) -> Mat4 {
+    // Produces a quaternion from Euler angles in the z-y-x orientation (Tait-Bryan angles)
+    let cy = yaw.cos();
+    let sy = yaw.sin();
+    let cp = pitch.cos();
+    let sp = pitch.sin();
+    let cr = roll.cos();
+    let sr = roll.sin();
+    Mat4::new(
+        cy * cr + sy * sp * sr,
+        sr * cp,
+        -sy * cr + cy * sp * sr,
+        0.0,
+        -cy * sr + sy * sp * cr,
+        cr * cp,
+        sr * sy + cy * sp * cr,
+        0.0,
+        sy * cp,
+        -sp,
+        cy * cp,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+    )
+}
