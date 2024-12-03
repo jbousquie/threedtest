@@ -2,6 +2,7 @@
 
 // https://docs.rs/three-d/latest/three_d/
 
+
 use three_d::*;
 
 pub fn main() {
@@ -82,10 +83,14 @@ fn compute_instances(count: i32, side_count: i32, has_color: bool, time: f32) ->
         let y = (i / side_count) % side_count;
         let z = i / (side_count * side_count);
         let translation = Mat4::from_translation(vec3(3.0 * x as f32 - 1.5 * side_count as f32, 3.0 * y as f32 - 1.5 * side_count as f32, 3.0 * z as f32 - 1.5 * side_count as f32));
-        let rotation = 
-            Mat4::from_angle_x(radians(time * x as f32 * 0.3)) *
-            Mat4::from_angle_y(radians(time * y as f32 * 0.2)) *
-            Mat4::from_angle_z(radians(time * z as f32 * 0.1));
+
+        let euler_angle = cgmath::Euler {
+            x: cgmath::Rad(time * x as f32 * 0.3),
+            y: cgmath::Rad(time * y as f32 * 0.2),
+            z: cgmath::Rad(time * z as f32 * 0.1),
+        };
+
+        let rotation = Mat4::from(euler_angle);
         let transformation = translation * rotation;
         transformations.push(transformation);
         if has_color {
@@ -109,30 +114,3 @@ fn compute_instances(count: i32, side_count: i32, has_color: bool, time: f32) ->
     }
 }  
 
-fn rotationYawPitchRoll(yaw: f32, pitch: f32, roll: f32) -> Mat4 {
-    // Produces a quaternion from Euler angles in the z-y-x orientation (Tait-Bryan angles)
-    let cy = yaw.cos();
-    let sy = yaw.sin();
-    let cp = pitch.cos();
-    let sp = pitch.sin();
-    let cr = roll.cos();
-    let sr = roll.sin();
-    Mat4::new(
-        cy * cr + sy * sp * sr,
-        sr * cp,
-        -sy * cr + cy * sp * sr,
-        0.0,
-        -cy * sr + sy * sp * cr,
-        cr * cp,
-        sr * sy + cy * sp * cr,
-        0.0,
-        sy * cp,
-        -sp,
-        cy * cp,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-    )
-}
